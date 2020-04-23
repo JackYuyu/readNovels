@@ -33,6 +33,8 @@
 
 @property (nonatomic, assign) BOOL statusBarHide;
 
+@property (nonatomic, strong) NSMutableArray* chapters;
+@property (nonatomic, assign) NSInteger currentpos;
 @end
 
 @implementation LNReaderViewController
@@ -101,6 +103,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     [self threeapi];
+    self.chapters=[NSMutableArray new];
+    self.currentpos=1;
 //    [self loadapi];
     
     self.menuIsShowing = NO;
@@ -127,7 +131,7 @@
     
     [self.readerVM setReaderSkin];
     
-    [self getBookData];
+//    [self getBookData];
     
 }
 
@@ -200,24 +204,36 @@
 - (void)loadMoreData
 {
     LNBookContent *last = (LNBookContent *)self.dataArray.lastObject;
-    if (last.chapterOrder == self.readerVM.currentSource.chapterList.count - 1) {
+//    if (last.chapterOrder == self.readerVM.currentSource.chapterList.count - 1) {
+//        [self.tableView.mj_footer endRefreshingWithNoMoreData];
+//        return;
+//    }
+//    [self.readerVM changeChapter:(last.chapterOrder + 1) complete:^(NSArray *result, BOOL cache, NSError *error) {
+//        if (!error) {
+//            [self.dataArray addObjectsFromArray:result];
+//            [self.tableView reloadData];
+//        }
+//        else{
+//            [MBProgressHUD showMessageHUD:error.domain];
+//        }
+//        [self.tableView.mj_footer endRefreshing];
+////        if (self.readerVM.hasVipChapter) {
+////            NSString *tip = [NSString stringWithFormat:@"该小说含第%ld章以后为vip章节，请切换源再试",self.readerVM.vipChapterIndex];
+////            [MBProgressHUD showCancelButtonMessageHUD:tip];
+////        }
+//    }];
+    if (last.chapterOrder==self.chapters.count-1) {
         [self.tableView.mj_footer endRefreshingWithNoMoreData];
         return;
     }
-    [self.readerVM changeChapter:(last.chapterOrder + 1) complete:^(NSArray *result, BOOL cache, NSError *error) {
-        if (!error) {
-            [self.dataArray addObjectsFromArray:result];
-            [self.tableView reloadData];
-        }
-        else{
-            [MBProgressHUD showMessageHUD:error.domain];
-        }
-        [self.tableView.mj_footer endRefreshing];
-//        if (self.readerVM.hasVipChapter) {
-//            NSString *tip = [NSString stringWithFormat:@"该小说含第%ld章以后为vip章节，请切换源再试",self.readerVM.vipChapterIndex];
-//            [MBProgressHUD showCancelButtonMessageHUD:tip];
-//        }
-    }];
+    LNmodel* model=(LNmodel*)self.chapters[self.currentpos];
+    [self loadapi:model.link];
+    self.currentpos=model.pos;
+    self.currentpos++;
+    [self.tableView setContentOffset:CGPointMake(0,0) animated:NO];
+    [self.tableView.mj_footer endRefreshing];
+
+
 }
 
 - (float)pageSize
@@ -245,7 +261,9 @@
 
               NSDictionary * requestDic = responseObject;
               LNBookContent* c=[LNBookContent new];
-              c.title=@"something";
+              
+              LNmodel* model=(LNmodel*)self.chapters[self.currentpos-1];
+              c.title=model.title;
               c.titleAttribute=[[NSMutableAttributedString alloc] initWithString: c.title];;
               c.body=str2;
               c.bodyAttribute=[[NSMutableAttributedString alloc] initWithString:c.body];
@@ -309,9 +327,9 @@
               NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
               NSDictionary *dict = (NSDictionary *)object;
               NSArray* temp=dict[@"data"];
-              NSDictionary* a=[temp objectAtIndex:0];
-              LNmodel* model=[LNmodel mj_objectWithKeyValues:a];
-              [self threeapi2:model.cid];
+              NSDictionary* b=[temp objectAtIndex:0];
+              LNmodel* model1=[LNmodel mj_objectWithKeyValues:b];
+              [self threeapi2:model1.cid];
               NSLog(@"");
           } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
               NSLog(@"");
@@ -319,6 +337,7 @@
           }];
     
 }
+//获取章节列表
 -(void)threeapi2:(NSString*)cid
 {
     // 1.获得请求管理者
@@ -339,6 +358,13 @@
               NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
               NSDictionary *dict = (NSDictionary *)object;
               NSArray* temp=dict;
+              
+              for (int i=0; i<temp.count; i++) {
+                  NSDictionary* a=[temp objectAtIndex:i];
+                  LNmodel* model=[LNmodel mj_objectWithKeyValues:a];
+                  [self.chapters addObject:model];
+              }
+              
               NSDictionary* a=[temp objectAtIndex:0];
               LNmodel* model=[LNmodel mj_objectWithKeyValues:a];
               [self loadapi:model.link];
@@ -562,13 +588,28 @@
 - (void)showChapterListView
 {
     LNReaderChapterListViewController *listVc = [[LNReaderChapterListViewController alloc] init];
-    listVc.dataArray = [NSMutableArray arrayWithArray:self.readerVM.currentSource.chapterList];
-    listVc.currentIndex = [self.readerVM.currentSource.chapterList indexOfObject:self.readerVM.currentChapter];
+//    listVc.dataArray = [NSMutableArray arrayWithArray:self.readerVM.currentSource.chapterList];
+    
+    NSMutableArray * temp=[NSMutableArray array];
+    for (int i=0; i<self.chapters.count; i++) {
+        LNmodel* m=[self.chapters objectAtIndex:i];
+        LNBookChapter* ch=[LNBookChapter new];
+        ch.title=m.title;
+        [temp addObject:ch];
+    }
+    listVc.dataArray=temp;
+    listVc.currentIndex=self.currentpos;
+    
+//    listVc.currentIndex = [self.readerVM.currentSource.chapterList indexOfObject:self.readerVM.currentChapter];
     [self.readerVM.rightContentView addSubview:listVc.view];
     listVc.view.frame = self.readerVM.rightContentView.bounds;
     @weakify(self)
     [listVc setDidSelect:^(NSInteger index) {
-        [weak_self changeChapter:index];
+//        [weak_self changeChapter:index];
+        self.currentpos=index+1;
+        LNmodel* model=(LNmodel*)self.chapters[index];
+        [self loadapi:model.link];
+        
         [weak_self dismissRightView];
     }];
     [self addChildViewController:listVc];

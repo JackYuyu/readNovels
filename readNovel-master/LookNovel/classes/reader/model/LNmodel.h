@@ -13,6 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface LNmodel : NSObject
 @property (strong) NSString* cid;
 @property (strong) NSString* link;
+@property (assign) NSInteger pos;
+@property (strong) NSString* title;
 
 @end
 
