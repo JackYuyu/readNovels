@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface LNReaderViewController : LNTableViewController
 
 @property (nonatomic, strong) LNRecentBook *recentBook;
+@property (nonatomic, assign) BOOL detail;
 
 @end
 

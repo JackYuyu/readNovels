@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (LNRecentBook *)getLastRecentBookFromGroup;
 ///开始阅读
 - (void)startToReadBook:(LNBook *)book;
+- (void)startToReadBookDetail:(LNBook *)book;
 
 @end
 

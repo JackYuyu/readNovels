@@ -21,6 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) NSString *icon;
 /**书籍cover*/
 @property (nonatomic, strong) NSArray<NSString *> *bookCover;
+
+@property (nonatomic, copy) NSString *cover;
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *majorCate;
+@property (nonatomic, copy) NSString *minorCate;
+
 @end
 
 @interface LNClassifyGroupModel : NSObject

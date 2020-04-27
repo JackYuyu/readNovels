@@ -18,8 +18,8 @@
 
 - (void)setSuggest:(LNSuggest *)suggest
 {
-    self.icon.image = [UIImage imageNamed:suggest.iconName];
-    self.nameLabel.text = suggest.text;
+//    self.icon.image = [UIImage imageNamed:suggest.iconName];
+    self.nameLabel.text = suggest.word;
 }
 
 @end

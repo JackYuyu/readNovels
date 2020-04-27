@@ -109,6 +109,55 @@ static YYCache *localStorageCache_;
         recentBook.readRatio = 0;
         recentBook.z_id=book.z_id;
         LNReaderViewController *readerVc = [[LNReaderViewController alloc] init];
+        readerVc.detail=NO;
+        readerVc.recentBook = recentBook;
+        if (self.mainVc.navigationController) {
+            [self.mainVc.navigationController pushViewController:readerVc animated:YES];
+        }
+        else{
+            UINavigationController *navi = (UINavigationController *)((UITabBarController *)[UIApplication sharedApplication].keyWindow.rootViewController).selectedViewController;
+            [navi pushViewController:readerVc animated:YES];
+        }
+        [self saveLastRecentBook:recentBook];
+    }
+}
+
+- (void)startToReadBookDetail:(LNBook *)book
+{
+    //记录最近阅读
+    NSArray *books = [self getRecentBook];
+    LNRecentBook *oldBook = nil;
+    for (LNRecentBook *rBook in books) {
+        if ([book._id isEqualToString:rBook._id]) {
+            oldBook = rBook;
+            break;
+        }
+    }
+    if (oldBook) {
+        //已存在
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            [self saveLastRecentBook:oldBook];
+        });
+        LNReaderViewController *readerVc = [[LNReaderViewController alloc] init];
+        readerVc.detail=YES;
+        readerVc.recentBook = oldBook;
+        if (self.mainVc.navigationController) {
+            [self.mainVc.navigationController pushViewController:readerVc animated:YES];
+        }
+        else{
+            UINavigationController *navi = (UINavigationController *)((UITabBarController *)[UIApplication sharedApplication].keyWindow.rootViewController).selectedViewController;
+            [navi pushViewController:readerVc animated:YES];
+        }
+    }
+    else{
+        //不存在
+        LNRecentBook *recentBook = [[LNRecentBook alloc] init];
+        recentBook.title = book.title;
+        recentBook._id = book._id;
+        recentBook.cover = book.cover;
+        recentBook.readRatio = 0;
+        recentBook.z_id=book.z_id;
+        LNReaderViewController *readerVc = [[LNReaderViewController alloc] init];
         readerVc.recentBook = recentBook;
         if (self.mainVc.navigationController) {
             [self.mainVc.navigationController pushViewController:readerVc animated:YES];

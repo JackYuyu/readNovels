@@ -31,6 +31,9 @@ typedef enum : NSUInteger {
 @property (nonatomic, copy) NSString *Id;
 /**作者*/
 @property (nonatomic, copy) NSString *author;
+//
+@property (nonatomic, copy) NSString *book;
+@property (nonatomic, copy) NSString *word;
 
 @end
 

@@ -15,6 +15,7 @@
 
 - (void)getAllClassify
 {
+//    [self loadapi];
     [MBProgressHUD showWaitingViewText:nil detailText:nil inView:nil];
     [LNAPI getAllClassifyListComplete:^(NSDictionary *result, BOOL cache, NSError *error) {
         NSMutableArray *dataArray = [NSMutableArray array];
@@ -37,15 +38,15 @@
             group.selected = NO;
             [dataArray addObject:group];
         }
-        NSArray *pressArr = [result objectForKey:@"press"];
-        if (pressArr.count) {
-            LNClassifyGroupModel *group = [[LNClassifyGroupModel alloc] init];
-            group.name = [self nameForKey:@"press"];
-            group.key = @"press";
-            [rightArray addObject:[NSArray modelArrayWithClass:[LNClassifyModel class] json:pressArr]];
-            group.selected = NO;
-            [dataArray addObject:group];
-        }
+//        NSArray *pressArr = [result objectForKey:@"press"];
+//        if (pressArr.count) {
+//            LNClassifyGroupModel *group = [[LNClassifyGroupModel alloc] init];
+//            group.name = [self nameForKey:@"press"];
+//            group.key = @"press";
+//            [rightArray addObject:[NSArray modelArrayWithClass:[LNClassifyModel class] json:pressArr]];
+//            group.selected = NO;
+//            [dataArray addObject:group];
+//        }
         
         LNClassifyGroupModel *first = (LNClassifyGroupModel *)dataArray.firstObject;
         first.selected = YES;
@@ -57,6 +58,74 @@
     }];
 }
 
+-(void)loadapi
+{
+    // 1.获得请求管理者
+          static AFHTTPSessionManager *mgr = nil;
+          static dispatch_once_t onceToken;
+          dispatch_once(&onceToken, ^{
+              mgr = [[AFHTTPSessionManager alloc] initWithBaseURL:[NSURL URLWithString:@""]];
+              mgr.requestSerializer = [AFJSONRequestSerializer serializer];
+              mgr.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/html",@"text/json", @"text/plain", @"text/javascript", nil];
+          });
+        mgr.responseSerializer=[AFHTTPResponseSerializer serializer];
+          [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+          
+          // 2.发送GET请求
+    NSString* urlclssify=@"http://api.smaoxs.com/book/by-categories?gender=male&major=玄幻&start=0&limit=50";
+    NSString *encodedValue = [urlclssify stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+
+          [mgr GET:[NSString stringWithFormat:@"%@", encodedValue] parameters:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+              [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+              
+              NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
+              NSDictionary *dict = (NSDictionary *)object;
+//              NSArray* countArr=dict[@"books"];
+
+              NSMutableArray *dataArray = [NSMutableArray array];
+              NSMutableArray *rightArray = [NSMutableArray array];
+              NSLog(@"");
+              NSArray *maleArr = [dict objectForKey:@"books"];
+              if (maleArr.count) {
+                  LNClassifyGroupModel *group = [[LNClassifyGroupModel alloc] init];
+                  group.name = [self nameForKey:@"male"];
+                  group.key = @"male";
+                  [rightArray addObject:[NSArray modelArrayWithClass:[LNClassifyModel class] json:maleArr]];
+                  group.selected = NO;
+                  [dataArray addObject:group];
+              }
+              NSArray *femaleArr = [dict objectForKey:@"books"];
+              if (femaleArr.count) {
+                  LNClassifyGroupModel *group = [[LNClassifyGroupModel alloc] init];
+                  group.name = [self nameForKey:@"female"];
+                  group.key = @"female";
+                  [rightArray addObject:[NSArray modelArrayWithClass:[LNClassifyModel class] json:femaleArr]];
+                  group.selected = NO;
+                  [dataArray addObject:group];
+              }
+//              NSArray *pressArr = [result objectForKey:@"press"];
+//              if (pressArr.count) {
+//                  LNClassifyGroupModel *group = [[LNClassifyGroupModel alloc] init];
+//                  group.name = [self nameForKey:@"press"];
+//                  group.key = @"press";
+//                  [rightArray addObject:[NSArray modelArrayWithClass:[LNClassifyModel class] json:pressArr]];
+//                  group.selected = NO;
+//                  [dataArray addObject:group];
+//              }
+              
+              LNClassifyGroupModel *first = (LNClassifyGroupModel *)dataArray.firstObject;
+              first.selected = YES;
+//              self.lastGroupModel = first;
+//              self.leftDataArray = dataArray;
+//              self.rightDataArray = rightArray;
+//              [self reloadData];
+              
+          } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+              NSLog(@"");
+
+          }];
+    
+}
 - (NSString *)nameForKey:(NSString *)key
 {
     if ([key isEqualToString:@"male"])

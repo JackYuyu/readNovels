@@ -35,6 +35,8 @@
 
 @property (nonatomic, strong) NSMutableArray* chapters;
 @property (nonatomic, assign) NSInteger currentpos;
+
+
 @end
 
 @implementation LNReaderViewController
@@ -102,7 +104,11 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self threeapi];
+    if (self.detail) {
+            [self threeapidetail];
+    }
+    else
+        [self threeapi];
     self.chapters=[NSMutableArray new];
     self.currentpos=1;
 //    [self loadapi];
@@ -293,7 +299,39 @@
           [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
           
           // 2.发送GET请求
+    if (!self.recentBook.z_id) {
+        self.recentBook.z_id=self.recentBook._id;
+    }
           [mgr GET:[NSString stringWithFormat:@"%@%@", @"http://api.smaoxs.com/book/",self.recentBook.z_id] parameters:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+              [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+              NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
+              NSDictionary *dict = (NSDictionary *)object;
+              NSInteger bid=[dict[@"bid"] integerValue];
+              NSString* b=[NSString stringWithFormat:@"%d",bid];
+              [self threeapi1:b];
+              NSLog(@"");
+          } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+              NSLog(@"");
+
+          }];
+    
+}
+
+-(void)threeapidetail
+{
+    // 1.获得请求管理者
+          static AFHTTPSessionManager *mgr = nil;
+          static dispatch_once_t onceToken;
+          dispatch_once(&onceToken, ^{
+              mgr = [[AFHTTPSessionManager alloc] initWithBaseURL:[NSURL URLWithString:@""]];
+              mgr.requestSerializer = [AFJSONRequestSerializer serializer];
+              mgr.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/html",@"text/json", @"text/plain", @"text/javascript", nil];
+          });
+        mgr.responseSerializer=[AFHTTPResponseSerializer serializer];
+          [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+          
+          // 2.发送GET请求
+          [mgr GET:[NSString stringWithFormat:@"%@%@", @"http://api.smaoxs.com/book/",self.recentBook._id] parameters:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
               [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
               NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
               NSDictionary *dict = (NSDictionary *)object;

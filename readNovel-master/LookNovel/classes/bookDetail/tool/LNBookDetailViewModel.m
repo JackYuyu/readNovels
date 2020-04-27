@@ -15,19 +15,47 @@
 
 - (void)loadDetailData
 {
-    [MBProgressHUD showWaitingViewText:nil detailText:nil inView:self.detailVc.view];
-    [LNAPI getBookDetailWithId:self.detailVc.bookId complete:^(id result, BOOL cache, NSError *error) {
-        [MBProgressHUD dismissHUDInView:self.detailVc.view];
-        if (error) {
-            [MBProgressHUD showMessageHUD:error.domain];
-        }
-        else{
-            LNBookDetail *detail = [LNBookDetail modelWithDictionary:result];
-            self.detail = detail;
-            [self handleData];
-            [self setupData];
-        }
-    }];
+//    [MBProgressHUD showWaitingViewText:nil detailText:nil inView:self.detailVc.view];
+//    [LNAPI getBookDetailWithId:self.detailVc.bookId complete:^(id result, BOOL cache, NSError *error) {
+//        [MBProgressHUD dismissHUDInView:self.detailVc.view];
+//        if (error) {
+//            [MBProgressHUD showMessageHUD:error.domain];
+//        }
+//        else{
+//            LNBookDetail *detail = [LNBookDetail modelWithDictionary:result];
+//            self.detail = detail;
+//            [self handleData];
+//            [self setupData];
+//        }
+//    }];
+    
+    // 1.获得请求管理者
+          static AFHTTPSessionManager *mgr = nil;
+          static dispatch_once_t onceToken;
+          dispatch_once(&onceToken, ^{
+              mgr = [[AFHTTPSessionManager alloc] initWithBaseURL:[NSURL URLWithString:@""]];
+              mgr.requestSerializer = [AFJSONRequestSerializer serializer];
+              mgr.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/html",@"text/json", @"text/plain", @"text/javascript", nil];
+          });
+        mgr.responseSerializer=[AFHTTPResponseSerializer serializer];
+          [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+          
+          // 2.发送GET请求
+          [mgr GET:[NSString stringWithFormat:@"%@%@", @"http://api.smaoxs.com/book/",self.detailVc.bookId] parameters:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+              [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+              NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
+              NSDictionary *dict = (NSDictionary *)object;
+              NSInteger bid=[dict[@"bid"] integerValue];
+              NSString* b=[NSString stringWithFormat:@"%d",bid];
+              NSLog(@"");
+              LNBookDetail *detail = [LNBookDetail modelWithDictionary:dict];
+                          self.detail = detail;
+                          [self handleData];
+                          [self setupData];
+          } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+              NSLog(@"");
+
+          }];
 }
 
 - (void)setupData
@@ -55,7 +83,7 @@
 
 - (void)startReadBook
 {
-    [self startToReadBook:self.detail];
+    [self startToReadBookDetail:self.detail];
 }
 
 - (UIViewController *)mainVc

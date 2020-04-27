@@ -93,11 +93,57 @@
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
 {
-    [self getSuggestListWithKeyword:searchText complete:^(id result, BOOL cache, NSError *error) {
-        self.tipArray = result;
-        self.tableView.hidden = self.tipArray.count == 0;
-        [self.tableView reloadData];
-    }];
+//    [self getSuggestListWithKeyword:searchText complete:^(id result, BOOL cache, NSError *error) {
+//        self.tipArray = result;
+//        self.tableView.hidden = self.tipArray.count == 0;
+//        [self.tableView reloadData];
+//    }];
+    // 1.获得请求管理者
+              static AFHTTPSessionManager *mgr = nil;
+              static dispatch_once_t onceToken;
+              dispatch_once(&onceToken, ^{
+                  mgr = [[AFHTTPSessionManager alloc] initWithBaseURL:[NSURL URLWithString:@""]];
+                  mgr.requestSerializer = [AFJSONRequestSerializer serializer];
+                  mgr.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/html",@"text/json", @"text/plain", @"text/javascript", nil];
+              });
+            mgr.responseSerializer=[AFHTTPResponseSerializer serializer];
+              [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+
+              // 2.发送GET请求
+
+              [mgr GET:[NSString stringWithFormat:@"%@", @"http://api.smaoxs.com/book/hot-word"] parameters:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+                  [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+
+                  NSJSONSerialization *object = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableLeaves error:nil];
+                  NSDictionary *dict = (NSDictionary *)object;
+    //              NSArray* countArr=dict[@"books"];
+
+                  NSLog(@"");
+                  NSArray *maleArr = [dict objectForKey:@"newHotWords"];
+                  
+                  NSArray *modelArray = [NSArray modelArrayWithClass:[LNSuggest class] json:maleArr];
+                  for (LNSuggest *suggest in modelArray) {
+                      if ([suggest.tag isEqualToString:@"tag"]) {
+                          suggest.type = LNSuggestTypeNormal;
+                          suggest.iconName = @"search_icon_label_16_16_16x16_";
+                      }
+                      else if ([suggest.tag isEqualToString:@"bookauthor"]){
+                          suggest.type = LNSuggestTypeAuthor;
+                          suggest.iconName = @"search_icon_author_16_16_16x16_";
+                      }
+                      else if ([suggest.tag isEqualToString:@"bookname"]){
+                          suggest.type = LNSuggestTypeBook;
+                          suggest.iconName = @"search_icon_book_16_16_16x16_";
+                      }
+                  }
+                  self.tipArray = modelArray;
+                  self.tableView.hidden = self.tipArray.count == 0;
+                  [self.tableView reloadData];
+
+              } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                  NSLog(@"");
+
+              }];
 }
 
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
@@ -129,7 +175,7 @@
 {
     LNSuggest *suggest = self.tipArray[indexPath.row];
     if (suggest.type == LNSuggestTypeNormal || suggest.type == LNSuggestTypeAuthor) {
-        [self startSearch:suggest.text];
+        [self startSearch:suggest.word];
     }
     else if (suggest.type == LNSuggestTypeBook) {
         LNBookDetailViewController *detailVc = [[LNBookDetailViewController alloc] init];
